@@ -1,2 +1,2 @@
-# Learning Python to build my own model
+# Building my own model to control
 Learning PyTorch for Machine Learning 
