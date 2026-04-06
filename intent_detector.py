@@ -1,15 +1,11 @@
-import re
-from typing import Dict, Tuple, List
+from typing import Tuple
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
-import pickle
-import os
 
 class IntentDetector:
-    def __init__(self):
-        self.model = None
-        self.vectorizer = None
+    def __init__(self) -> None:
+        self.model: Pipeline = Pipeline([])
         self.intents = [
             'play', 'pause', 'next', 'previous', 'search', 'help',
             'unknown', 'stop', 'resume', 'mute', 'unmute', 'disarm',
@@ -40,6 +36,11 @@ class IntentDetector:
             ("can you pause that", "pause"),
             ("wait pause it", "pause"),
             ("pause the song", "pause"),
+            ("pause playback", "pause"),
+            ("pause it", "pause"),
+            ("just pause", "pause"),
+            ("pause for a moment", "pause"),
+            ("temporarily pause", "pause"),
 
             # --- resume ---
             ("resume playback", "resume"),
@@ -50,6 +51,10 @@ class IntentDetector:
             ("resume", "resume"),
             ("continue the song", "resume"),
             ("start again", "resume"),
+            ("resume please", "resume"),
+            ("go back to playing", "resume"),
+            ("continue from where we left", "resume"),
+            ("play again", "resume"),
 
             # --- stop ---
             ("stop playing", "stop"),
@@ -92,6 +97,14 @@ class IntentDetector:
             ("raise the volume", "volume_up"),
             ("make it louder", "volume_up"),
             ("turn up the volume", "volume_up"),
+            ("crank it up", "volume_up"),
+            ("amp it up", "volume_up"),
+            ("increase volume", "volume_up"),
+            ("louder", "volume_up"),
+            ("make volume louder", "volume_up"),
+            ("pump up the volume", "volume_up"),
+            ("boost volume", "volume_up"),
+            ("up the volume", "volume_up"),
 
             # --- volume down ---
             ("volume down", "volume_down"),
@@ -132,6 +145,11 @@ class IntentDetector:
             ("browse for news", "search"),
             ("ask google", "search"),
             ("search that", "search"),
+            ("search online", "search"),
+            ("look for", "search"),
+            ("find me", "search"),
+            ("web search", "search"),
+            ("look up information", "search"),
 
             # --- define ---
             ("what does this word mean", "define"),
@@ -143,6 +161,11 @@ class IntentDetector:
             ("give me the definition of", "define"),
             ("define the term", "define"),
             ("what is the meaning of", "define"),
+            ("define that", "define"),
+            ("explain this term", "define"),
+            ("what is that called", "define"),
+            ("definition please", "define"),
+            ("explain the meaning", "define"),
 
             # --- weather ---
             ("what is the weather today", "weather"),
@@ -155,6 +178,11 @@ class IntentDetector:
             ("is it sunny today", "weather"),
             ("what temperature is it", "weather"),
             ("how cold is it", "weather"),
+            ("weather please", "weather"),
+            ("what's the weather condition", "weather"),
+            ("will it rain", "weather"),
+            ("check the weather", "weather"),
+            ("weather for today", "weather"),
 
             # --- time ---
             ("what time is it", "time"),
@@ -164,6 +192,12 @@ class IntentDetector:
             ("current time please", "time"),
             ("whats todays date", "time"),
             ("what year is it", "time"),
+            ("current date", "time"),
+            ("what's the time now", "time"),
+            ("tell me today's date", "time"),
+            ("current time", "time"),
+            ("time please", "time"),
+            ("what time", "time"),
 
             # --- timer ---
             ("set a timer for 5 minutes", "timer"),
@@ -173,6 +207,12 @@ class IntentDetector:
             ("set a countdown", "timer"),
             ("start the countdown", "timer"),
             ("give me a 2 minute timer", "timer"),
+            ("timers", "timer"),
+            ("set timer", "timer"),
+            ("start timer", "timer"),
+            ("timer please", "timer"),
+            ("run a timer", "timer"),
+            ("count down 1 minute", "timer"),
 
             # --- reminder ---
             ("remind me to call mum", "reminder"),
@@ -182,6 +222,12 @@ class IntentDetector:
             ("remind me at 3pm", "reminder"),
             ("schedule a reminder", "reminder"),
             ("remind me to take my medicine", "reminder"),
+            ("reminder please", "reminder"),
+            ("remember to", "reminder"),
+            ("set a reminder", "reminder"),
+            ("reminders", "reminder"),
+            ("remind me", "reminder"),
+            ("don't forget", "reminder"),
 
             # --- arm ---
             ("arm the system", "arm"),
@@ -191,6 +237,11 @@ class IntentDetector:
             ("turn on the security system", "arm"),
             ("set the alarm", "arm"),
             ("secure the house", "arm"),
+            ("arm please", "arm"),
+            ("activate the alarm", "arm"),
+            ("security on", "arm"),
+            ("arm security", "arm"),
+            ("enable security", "arm"),
 
             # --- disarm ---
             ("disarm the system", "disarm"),
@@ -199,6 +250,11 @@ class IntentDetector:
             ("disarm the alarm", "disarm"),
             ("turn off the security system", "disarm"),
             ("I'm home disarm", "disarm"),
+            ("disarm please", "disarm"),
+            ("disable security", "disarm"),
+            ("security off", "disarm"),
+            ("deactivate alarm", "disarm"),
+            ("turn off alarm", "disarm"),
 
             # --- lock ---
             ("lock the door", "lock"),
@@ -244,6 +300,13 @@ class IntentDetector:
             ("what's up", "greet"),
             ("yo atlas", "greet"),
             ("howdy", "greet"),
+            ("hello", "greet"),
+            ("hey", "greet"),
+            ("hi", "greet"),
+            ("good morning", "greet"),
+            ("good afternoon", "greet"),
+            ("greetings atlas", "greet"),
+            ("good to see you", "greet"),
 
             # --- goodbye ---
             ("goodbye atlas", "goodbye"),
@@ -254,6 +317,12 @@ class IntentDetector:
             ("goodnight atlas", "goodbye"),
             ("that's all for now", "goodbye"),
             ("I'm done", "goodbye"),
+            ("goodbye", "goodbye"),
+            ("bye bye", "goodbye"),
+            ("farewell", "goodbye"),
+            ("catch you later", "goodbye"),
+            ("see you soon", "goodbye"),
+            ("talk later", "goodbye"),
 
             # --- joke ---
             ("tell me a joke", "joke"),
@@ -261,6 +330,10 @@ class IntentDetector:
             ("make me laugh", "joke"),
             ("got any jokes", "joke"),
             ("tell me something funny", "joke"),
+            ("make a joke", "joke"),
+            ("funny joke please", "joke"),
+            ("jokes please", "joke"),
+            ("something funny", "joke"),
 
             # --- news ---
             ("what's in the news", "news"),
@@ -269,6 +342,9 @@ class IntentDetector:
             ("what's happening in the world", "news"),
             ("catch me up on the news", "news"),
             ("news headlines", "news"),
+            ("news please", "news"),
+            ("what's new", "news"),
+            ("latest news", "news"),
 
             # --- help ---
             ("help me", "help"),
@@ -280,16 +356,26 @@ class IntentDetector:
             ("what do you support", "help"),
             ("give me a list of commands", "help"),
             ("I need help", "help"),
+            ("help please", "help"),
+            ("what are you capable of", "help"),
+            ("how can you help", "help"),
         ]
         self.train_model()
     
-    def train_model(self):
+    def train_model(self) -> None:
         """Train ML model on predefined training data."""
         commands, labels = zip(*self.training_data)
         
         self.model = Pipeline([
-            ('tfidf', TfidfVectorizer(lowercase=True, stop_words='english')),
-            ('clf', MultinomialNB())
+            ('tfidf', TfidfVectorizer(
+                lowercase=True, 
+                stop_words='english',
+                ngram_range=(1, 2),
+                max_features=1000,
+                min_df=1,
+                max_df=0.9
+            )),
+            ('clf', MultinomialNB(alpha=0.5))
         ])
         
         self.model.fit(commands, labels)
@@ -309,11 +395,11 @@ class IntentDetector:
         if not command_lower:
             return ('unknown', 0.0)
         
-        intent = self.model.predict([command_lower])[0]
+        intent = str(self.model.predict([command_lower])[0])
         confidence_scores = self.model.predict_proba([command_lower])[0]
         confidence = float(max(confidence_scores))
 
-        if confidence < 0.3:
+        if confidence < 0.12:
             return ('unknown', confidence)
         
         return (intent, confidence)
