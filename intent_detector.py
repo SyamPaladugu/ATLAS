@@ -5,9 +5,8 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 
 class IntentDetector:
-    def __init__(self):
-        self.model = None
-        self.vectorizer = None
+    def __init__(self) -> None:
+        self.model: Pipeline = Pipeline([])
         self.intents = [
             'play', 'pause', 'next', 'previous', 'search', 'help',
             'unknown', 'stop', 'resume', 'mute', 'unmute', 'disarm',
@@ -107,8 +106,15 @@ class IntentDetector:
         """Train ML model on predefined training data."""
         commands, labels = zip(*self.training_data)
         self.model = Pipeline([
-            ('tfidf', TfidfVectorizer(lowercase=True, stop_words='english')),
-            ('clf', MultinomialNB())
+            ('tfidf', TfidfVectorizer(
+                lowercase=True, 
+                stop_words='english',
+                ngram_range=(1, 2),
+                max_features=1000,
+                min_df=1,
+                max_df=0.9
+            )),
+            ('clf', MultinomialNB(alpha=0.5))
         ])
         self.model.fit(commands, labels)
     
@@ -127,7 +133,7 @@ class IntentDetector:
         if not command_lower:
             return ('unknown', 0.0)
         
-        intent = self.model.predict([command_lower])[0]
+        intent = str(self.model.predict([command_lower])[0])
         confidence_scores = self.model.predict_proba([command_lower])[0]
         confidence = float(max(confidence_scores))
 
