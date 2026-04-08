@@ -1,10 +1,8 @@
-import re
+
 from typing import Dict, Tuple, List
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
-import pickle
-import os
 
 class IntentDetector:
     def __init__(self):
@@ -18,280 +16,100 @@ class IntentDetector:
             'joke', 'news', 'greet', 'goodbye', 'timer'
         ]
         self.training_data = [
-            # --- play ---
-            ("play my favorite song", "play"),
-            ("start playing music", "play"),
-            ("begin the track", "play"),
-            ("play some music", "play"),
-            ("put on a song", "play"),
-            ("play something", "play"),
-            ("play hip hop", "play"),
-            ("play jazz music", "play"),
-            ("play the next song", "play"),
-            ("I want to listen to music", "play"),
-            ("start the music", "play"),
-            ("play atlas playlist", "play"),
-
-            # --- pause ---
-            ("pause the music", "pause"),
-            ("pause this", "pause"),
-            ("hold on", "pause"),
-            ("pause please", "pause"),
-            ("can you pause that", "pause"),
-            ("wait pause it", "pause"),
+            ("play my music", "play"),
+            ("start playing", "play"),
+            ("play song", "play"),
+            ("play the playlist", "play"),
+            ("play", "play"),
             ("pause the song", "pause"),
-
-            # --- resume ---
-            ("resume playback", "resume"),
-            ("resume the music", "resume"),
-            ("continue playing", "resume"),
-            ("unpause", "resume"),
-            ("keep playing", "resume"),
-            ("resume", "resume"),
-            ("continue the song", "resume"),
-            ("start again", "resume"),
-
-            # --- stop ---
-            ("stop playing", "stop"),
-            ("stop the music", "stop"),
-            ("turn off music", "stop"),
-            ("stop everything", "stop"),
-            ("halt", "stop"),
-            ("stop now", "stop"),
-            ("cut the music", "stop"),
-            ("silence", "stop"),
-
-            # --- next ---
-            ("skip to next", "next"),
-            ("go forward", "next"),
-            ("play next track", "next"),
-            ("next song", "next"),
-            ("skip this", "next"),
-            ("skip song", "next"),
-            ("next please", "next"),
-            ("I don't like this song", "next"),
-            ("skip ahead", "next"),
-            ("change the song", "next"),
-
-            # --- previous ---
+            ("pause it", "pause"),
+            ("stop the music", "pause"),
+            ("pause", "pause"),
+            ("next track", "next"),
+            ("skip", "next"),
+            ("play next", "next"),
+            ("next", "next"),
             ("go back", "previous"),
             ("previous song", "previous"),
-            ("rewind", "previous"),
             ("last track", "previous"),
-            ("go to previous", "previous"),
-            ("play that again", "previous"),
-            ("back to the last song", "previous"),
-            ("previous track please", "previous"),
-
-            # --- volume up ---
-            ("volume up", "volume_up"),
-            ("turn it up", "volume_up"),
-            ("louder please", "volume_up"),
-            ("increase the volume", "volume_up"),
-            ("can you make it louder", "volume_up"),
-            ("raise the volume", "volume_up"),
-            ("make it louder", "volume_up"),
-            ("turn up the volume", "volume_up"),
-
-            # --- volume down ---
-            ("volume down", "volume_down"),
-            ("turn it down", "volume_down"),
-            ("quieter please", "volume_down"),
-            ("decrease the volume", "volume_down"),
-            ("lower the volume", "volume_down"),
-            ("make it quieter", "volume_down"),
-            ("turn down the volume", "volume_down"),
-            ("not so loud", "volume_down"),
-
-            # --- mute ---
-            ("mute", "mute"),
-            ("mute the sound", "mute"),
-            ("go silent", "mute"),
-            ("mute please", "mute"),
-            ("be quiet", "mute"),
-            ("shut up", "mute"),
-            ("silence the audio", "mute"),
-            ("turn off the sound", "mute"),
-
-            # --- unmute ---
-            ("unmute", "unmute"),
-            ("unmute please", "unmute"),
-            ("turn the sound back on", "unmute"),
-            ("I can hear you now", "unmute"),
-            ("restore audio", "unmute"),
-
-            # --- search ---
-            ("search for pytorch tutorials", "search"),
-            ("look up the weather", "search"),
-            ("google iron man", "search"),
-            ("can you find information about", "search"),
-            ("search the web for", "search"),
-            ("look it up", "search"),
-            ("find me information on", "search"),
-            ("search for recipes", "search"),
-            ("browse for news", "search"),
-            ("ask google", "search"),
-            ("search that", "search"),
-
-            # --- define ---
-            ("what does this word mean", "define"),
-            ("whats the meaning of this word", "define"),
-            ("define algorithm", "define"),
-            ("what is the definition of", "define"),
-            ("explain what this means", "define"),
-            ("what does ephemeral mean", "define"),
-            ("give me the definition of", "define"),
-            ("define the term", "define"),
-            ("what is the meaning of", "define"),
-
-            # --- weather ---
-            ("what is the weather today", "weather"),
-            ("is it going to rain", "weather"),
-            ("whats the weather like", "weather"),
-            ("tell me the forecast", "weather"),
-            ("should I bring an umbrella", "weather"),
-            ("how hot is it outside", "weather"),
-            ("weather forecast for tomorrow", "weather"),
-            ("is it sunny today", "weather"),
-            ("what temperature is it", "weather"),
-            ("how cold is it", "weather"),
-
-            # --- time ---
-            ("what time is it", "time"),
-            ("tell me the time", "time"),
-            ("what is the date today", "time"),
-            ("what day is it", "time"),
-            ("current time please", "time"),
-            ("whats todays date", "time"),
-            ("what year is it", "time"),
-
-            # --- timer ---
-            ("set a timer for 5 minutes", "timer"),
-            ("start a 10 minute timer", "timer"),
-            ("timer for 30 seconds", "timer"),
-            ("remind me in 5 minutes", "timer"),
-            ("set a countdown", "timer"),
-            ("start the countdown", "timer"),
-            ("give me a 2 minute timer", "timer"),
-
-            # --- reminder ---
-            ("remind me to call mum", "reminder"),
-            ("set a reminder for tomorrow", "reminder"),
-            ("don't let me forget my meeting", "reminder"),
-            ("add a reminder", "reminder"),
-            ("remind me at 3pm", "reminder"),
-            ("schedule a reminder", "reminder"),
-            ("remind me to take my medicine", "reminder"),
-
-            # --- arm ---
-            ("arm the system", "arm"),
-            ("activate security", "arm"),
-            ("enable the alarm", "arm"),
-            ("arm the alarm", "arm"),
-            ("turn on the security system", "arm"),
-            ("set the alarm", "arm"),
-            ("secure the house", "arm"),
-
-            # --- disarm ---
-            ("disarm the system", "disarm"),
-            ("deactivate security", "disarm"),
-            ("disable the alarm", "disarm"),
-            ("disarm the alarm", "disarm"),
-            ("turn off the security system", "disarm"),
-            ("I'm home disarm", "disarm"),
-
-            # --- lock ---
-            ("lock the door", "lock"),
-            ("lock up", "lock"),
-            ("secure the door", "lock"),
-            ("lock the house", "lock"),
-            ("lock everything", "lock"),
-
-            # --- unlock ---
-            ("unlock the door", "unlock"),
-            ("open the lock", "unlock"),
-            ("let me in", "unlock"),
-            ("unlock the house", "unlock"),
-            ("unlock please", "unlock"),
-
-            # --- open ---
-            ("open the app", "open"),
-            ("open the application", "open"),
-            ("open chrome", "open"),
-            ("launch the browser", "open"),
-            ("open spotify", "open"),
-            ("open settings", "open"),
-            ("start the application", "open"),
-            ("launch the app", "open"),
-            ("open that", "open"),
-
-            # --- close ---
-            ("close the app", "close"),
-            ("close the application", "close"),
-            ("close this window", "close"),
-            ("shut down the app", "close"),
-            ("close chrome", "close"),
-            ("exit the application", "close"),
-            ("close that", "close"),
-            ("quit the app", "close"),
-
-            # --- greet ---
-            ("hello atlas", "greet"),
-            ("hey atlas", "greet"),
-            ("hi there", "greet"),
-            ("good morning atlas", "greet"),
-            ("good evening", "greet"),
-            ("what's up", "greet"),
-            ("yo atlas", "greet"),
-            ("howdy", "greet"),
-
-            # --- goodbye ---
-            ("goodbye atlas", "goodbye"),
-            ("see you later", "goodbye"),
-            ("bye", "goodbye"),
-            ("shut down atlas", "goodbye"),
-            ("exit", "goodbye"),
-            ("goodnight atlas", "goodbye"),
-            ("that's all for now", "goodbye"),
-            ("I'm done", "goodbye"),
-
-            # --- joke ---
-            ("tell me a joke", "joke"),
-            ("say something funny", "joke"),
-            ("make me laugh", "joke"),
-            ("got any jokes", "joke"),
-            ("tell me something funny", "joke"),
-
-            # --- news ---
-            ("what's in the news", "news"),
-            ("give me the latest news", "news"),
-            ("any news today", "news"),
-            ("what's happening in the world", "news"),
-            ("catch me up on the news", "news"),
-            ("news headlines", "news"),
-
-            # --- help ---
-            ("help me", "help"),
+            ("previous", "previous"),
+            ("search for song", "search"),
+            ("google something", "search"),
+            ("find information", "search"),
+            ("search", "search"),
             ("what can you do", "help"),
-            ("what can you help with", "help"),
-            ("show me your commands", "help"),
-            ("what are your features", "help"),
-            ("how do I use you", "help"),
-            ("what do you support", "help"),
-            ("give me a list of commands", "help"),
-            ("I need help", "help"),
+            ("help me", "help"),
+            ("show commands", "help"),
+            ("help", "help"),
+            ("stop playing", "stop"),
+            ("stop", "stop"),
+            ("resume the music", "resume"),
+            ("continue playing", "resume"),
+            ("resume", "resume"),
+            ("mute audio", "mute"),
+            ("turn off sound", "mute"),
+            ("mute", "mute"),
+            ("unmute", "unmute"),
+            ("turn on sound", "unmute"),
+            ("unmute", "unmute"),
+            ("arm security", "arm"),
+            ("activate alarm", "arm"),
+            ("arm", "arm"),
+            ("disarm system", "disarm"),
+            ("deactivate alarm", "disarm"),
+            ("disarm", "disarm"),
+            ("lock the door", "lock"),
+            ("secure the door", "lock"),
+            ("lock", "lock"),
+            ("unlock door", "unlock"),
+            ("open the door", "unlock"),
+            ("unlock", "unlock"),
+            ("define word", "define"),
+            ("what does mean", "define"),
+            ("explain term", "define"),
+            ("define", "define"),
+            ("open chrome", "open"),
+            ("launch browser", "open"),
+            ("open", "open"),
+            ("close app", "close"),
+            ("quit application", "close"),
+            ("close", "close"),
+            ("volume up", "volume_up"),
+            ("increase volume", "volume_up"),
+            ("volume down", "volume_down"),
+            ("decrease volume", "volume_down"),
+            ("weather today", "weather"),
+            ("how's the weather", "weather"),
+            ("weather", "weather"),
+            ("what time is it", "time"),
+            ("current time", "time"),
+            ("time", "time"),
+            ("set timer", "timer"),
+            ("start timer", "timer"),
+            ("timer", "timer"),
+            ("tell joke", "joke"),
+            ("make me laugh", "joke"),
+            ("joke", "joke"),
+            ("news", "news"),
+            ("latest news", "news"),
+            ("hello atlas", "greet"),
+            ("hi", "greet"),
+            ("hello", "greet"),
+            ("goodbye", "goodbye"),
+            ("bye", "goodbye"),
+            ("set reminder", "reminder"),
+            ("remind me", "reminder"),
+            ("reminder", "reminder"),
         ]
         self.train_model()
-    
+
     def train_model(self):
         """Train ML model on predefined training data."""
         commands, labels = zip(*self.training_data)
-        
         self.model = Pipeline([
             ('tfidf', TfidfVectorizer(lowercase=True, stop_words='english')),
             ('clf', MultinomialNB())
         ])
-        
         self.model.fit(commands, labels)
     
     def detect_intent(self, command: str) -> Tuple[str, float]:
@@ -313,7 +131,7 @@ class IntentDetector:
         confidence_scores = self.model.predict_proba([command_lower])[0]
         confidence = float(max(confidence_scores))
 
-        if confidence < 0.3:
+        if confidence < 0.05:
             return ('unknown', confidence)
         
         return (intent, confidence)
